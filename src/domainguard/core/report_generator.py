@@ -44,6 +44,20 @@ def _utc_text(moment) -> str:
     return moment.astimezone(timezone.utc).strftime("%d/%m/%Y %H:%M:%S UTC")
 
 
+def _plural(n: int, singular: str, plural: str) -> str:
+    return f"{n} {singular if n == 1 else plural}"
+
+
+def counts_sentence(c: dict[str, int]) -> str:
+    """Frase con el conteo de hallazgos, con singular y plural correctos."""
+    total = sum(c.values())
+    head = "Se registró 1 hallazgo" if total == 1 else f"Se registraron {total} hallazgos"
+    return (
+        f"{head}: {_plural(c['CRITICAL'], 'crítico', 'críticos')}, {_plural(c['HIGH'], 'alto', 'altos')}, "
+        f"{_plural(c['MEDIUM'], 'medio', 'medios')}, {_plural(c['LOW'], 'bajo', 'bajos')} y "
+        f"{_plural(c['INFORMATIONAL'], 'informativo', 'informativos')}."
+    )
+
 def executive_summary(result: ScanResult) -> list[str]:
     """Párrafos del resumen ejecutivo, derivados solo de datos del resultado."""
     if not result.assessed:
@@ -55,8 +69,7 @@ def executive_summary(result: ScanResult) -> list[str]:
     paragraphs = [
         f"Se analizó la configuración pública de DNS y de autenticación de correo (SPF, DKIM y DMARC) de "
         f"{result.domain}. Puntuación global: {risk.score}/100 ({risk.grade}, {risk.rating}).",
-        f"Se registraron {sum(c.values())} hallazgos: {c['CRITICAL']} críticos, {c['HIGH']} altos, "
-        f"{c['MEDIUM']} medios, {c['LOW']} bajos y {c['INFORMATIONAL']} informativos.",
+        counts_sentence(c),
     ]
     if risk.partial:
         paragraphs.append(

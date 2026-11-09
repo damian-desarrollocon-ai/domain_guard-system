@@ -430,7 +430,7 @@ class SpfAnalysisModule(BaseModule):
                 exp.lookups += 1
             if term.name == "ptr":
                 exp.ptr_in.append(domain)
-            if term.name in ("ip4", "ip6") and term.qualifier == "+" and term.prefix_len is not None:
+            if depth == 0 and term.name in ("ip4", "ip6") and term.qualifier == "+" and term.prefix_len is not None:
                 limit = BROAD_V4 if term.name == "ip4" else BROAD_V6
                 if term.prefix_len < limit:
                     exp.broad_ranges.append((f"{domain}: {term.raw}", term.prefix_len))
