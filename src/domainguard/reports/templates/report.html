@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'">
+<title>Reporte de seguridad de dominio — {{ result.domain }}</title>
+<style>
+:root {
+  --navy: #0b1a33; --navy-2: #13294b; --accent: #3d7bd9; --accent-soft: #e6effb;
+  --ink: #1b2437; --muted: #5b6b86; --line: #dfe6f1; --bg: #f4f7fb; --white: #ffffff;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink);
+  font: 15px/1.55 "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; }
+a { color: var(--accent); text-decoration: none; }
+.cover { background: linear-gradient(135deg, var(--navy) 0%, var(--navy-2) 100%); color: var(--white); padding: 40px 0 32px; }
+.wrap { max-width: 980px; margin: 0 auto; padding: 0 24px; }
+.brand { letter-spacing: .18em; text-transform: uppercase; font-size: 12px; color: #9db8e8; font-weight: 600; }
+.cover h1 { margin: 10px 0 4px; font-size: 30px; font-weight: 600; }
+.cover .domain { font-size: 22px; color: #cfe0ff; word-break: break-all; }
+.meta { display: flex; flex-wrap: wrap; gap: 8px 28px; margin-top: 18px; font-size: 13px; color: #b8c9e8; }
+.meta b { color: var(--white); font-weight: 600; }
+nav { background: var(--white); border-bottom: 1px solid var(--line); }
+nav .wrap { display: flex; flex-wrap: wrap; gap: 6px 22px; padding-top: 12px; padding-bottom: 12px; font-size: 13px; }
+main { padding: 28px 0 40px; }
+section { margin-bottom: 30px; }
+h2 { font-size: 20px; margin: 0 0 14px; color: var(--navy); padding-bottom: 8px; border-bottom: 2px solid var(--accent-soft); }
+h3 { font-size: 16px; margin: 22px 0 10px; color: var(--navy); }
+.card { background: var(--white); border: 1px solid var(--line); border-radius: 10px; padding: 18px 20px; }
+.summary { display: grid; grid-template-columns: 190px 1fr; gap: 24px; align-items: center; }
+.score-ring { --score: 0; --ring: var(--accent); width: 160px; height: 160px; border-radius: 50%; margin: 0 auto;
+  background: conic-gradient(var(--ring) calc(var(--score) * 1%), #e5ebf5 0); display: grid; place-items: center; }
+.score-ring .inner { width: 126px; height: 126px; border-radius: 50%; background: var(--white); display: grid;
+  place-items: center; text-align: center; align-content: center; }
+.score-ring .num { font-size: 40px; font-weight: 700; color: var(--navy); line-height: 1; }
+.score-ring .of { font-size: 12px; color: var(--muted); }
+.grade-A { --ring: #1c8c5e; } .grade-B { --ring: #3d7bd9; } .grade-C { --ring: #c98a0a; }
+.grade-D { --ring: #d1580f; } .grade-F { --ring: #b42318; }
+.rating { font-size: 20px; font-weight: 600; color: var(--navy); margin: 0 0 6px; }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0 0; }
+.chip { display: inline-block; padding: 2px 10px; border-radius: 999px; font-size: 12px; font-weight: 600; border: 1px solid transparent; }
+.sev-critical { background: #fde8e6; color: #b42318; border-color: #f6c5c0; }
+.sev-high { background: #fdeadb; color: #b54708; border-color: #f7d0b0; }
+.sev-medium { background: #fdf3d0; color: #8a5a00; border-color: #f0dc99; }
+.sev-low { background: #e2edfc; color: #1d5fb4; border-color: #bfd5f6; }
+.sev-informational { background: #eef1f5; color: #475467; border-color: #d9dfe8; }
+.tag { background: var(--accent-soft); color: #274b86; border-color: #cfe0f7; }
+.banner { border-radius: 8px; padding: 12px 14px; margin: 0 0 14px; font-size: 14px; border: 1px solid; }
+.banner.warn { background: #fff7e0; border-color: #f0dc99; color: #6b4a00; }
+.banner.info { background: var(--accent-soft); border-color: #cfe0f7; color: #274b86; }
+.banner ul { margin: 6px 0 0; padding-left: 18px; }
+table { width: 100%; border-collapse: collapse; font-size: 14px; background: var(--white); }
+th, td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { background: var(--navy); color: var(--white); font-weight: 600; font-size: 13px; }
+td.num, th.num { text-align: right; white-space: nowrap; }
+.table-wrap { border: 1px solid var(--line); border-radius: 10px; overflow-x: auto; }
+.finding { background: var(--white); border: 1px solid var(--line); border-left: 5px solid var(--accent);
+  border-radius: 10px; padding: 16px 20px; margin: 0 0 14px; }
+.finding.f-critical { border-left-color: #b42318; } .finding.f-high { border-left-color: #d1580f; }
+.finding.f-medium { border-left-color: #c98a0a; } .finding.f-low { border-left-color: #3d7bd9; }
+.finding.f-informational { border-left-color: #98a2b3; }
+.finding h4 { margin: 0 0 8px; font-size: 16px; color: var(--navy); }
+.fid { font-family: Consolas, "Courier New", monospace; font-size: 12px; color: var(--muted); margin-right: 6px; }
+.label { font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); font-weight: 700; margin: 12px 0 3px; }
+.finding p { margin: 0; }
+pre, code { font-family: Consolas, "Courier New", monospace; }
+pre { margin: 0; background: #0f1f3d; color: #dbe7ff; padding: 10px 12px; border-radius: 6px; font-size: 12.5px;
+  white-space: pre-wrap; word-break: break-all; }
+.limits { color: var(--muted); font-size: 13px; }
+ul.plain { margin: 0; padding-left: 20px; } ul.plain li { margin: 4px 0; }
+.muted { color: var(--muted); }
+footer { background: var(--navy); color: #9db8e8; font-size: 12.5px; padding: 22px 0; }
+footer p { margin: 4px 0; }
+@media (max-width: 680px) { .summary { grid-template-columns: 1fr; } .cover h1 { font-size: 24px; } }
+@media print {
+  @page { margin: 14mm; }
+  body { background: #fff; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  nav { display: none; }
+  .finding, .card, tr { break-inside: avoid; }
+}
+</style>
+</head>
+<body>
+<header class="cover">
+  <div class="wrap">
+    <div class="brand">DomainGuard · Evaluación de seguridad de dominio</div>
+    <h1>Reporte de configuración de seguridad</h1>
+    <div class="domain">{{ result.domain }}</div>
+    <div class="meta">
+      <span>Fecha del análisis: <b>{{ started_text }}</b></span>
+      <span>Duración: <b>{{ result.duration_seconds }} s</b></span>
+      <span>Versión: <b>{{ result.tool_version }}</b></span>
+      {% if result.dns_queries is not none %}<span>Consultas DNS: <b>{{ result.dns_queries }}</b></span>{% endif %}
+    </div>
+  </div>
+</header>
+<nav><div class="wrap">
+  <a href="#resumen">Resumen</a><a href="#modulos">Módulos</a><a href="#hallazgos">Hallazgos</a>
+  <a href="#puntuacion">Puntuación</a><a href="#dns">Registros DNS</a><a href="#limitaciones">Limitaciones</a>
+</div></nav>
+<main><div class="wrap">
+
+<section id="resumen">
+  <h2>Resumen ejecutivo</h2>
+  {% if not result.assessed %}
+  <div class="banner warn"><b>Dominio no evaluable.</b> El dominio no existe en DNS en el momento del análisis, por lo que la puntuación no es significativa.</div>
+  {% endif %}
+  {% if risk.partial %}
+  <div class="banner warn"><b>Puntuación provisional.</b> El análisis quedó incompleto en algunas áreas:
+    <ul>{% for reason in risk.partial_reasons %}<li>{{ reason }}</li>{% endfor %}</ul></div>
+  {% endif %}
+  <div class="card summary">
+    <div class="score-ring grade-{{ risk.grade }}" style="--score: {{ risk.score if result.assessed else 0 }}">
+      <div class="inner">
+        {% if result.assessed %}<div class="num">{{ risk.score }}</div><div class="of">de 100 · {{ risk.grade }}</div>
+        {% else %}<div class="num">—</div><div class="of">sin evaluar</div>{% endif %}
+      </div>
+    </div>
+    <div>
+      <p class="rating">{% if result.assessed %}Calificación: {{ risk.rating }}{% else %}Sin calificación{% endif %}</p>
+      {% for paragraph in summary_paragraphs %}<p>{{ paragraph }}</p>{% endfor %}
+      <div class="chips">
+        {% for sev in severity_order %}
+        <span class="chip sev-{{ sev|lower }}">{{ labels.severity[sev] }}: {{ risk.counts_by_severity[sev] }}</span>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+  <div class="banner info" style="margin-top:14px"><b>Alcance.</b> {{ result.authorization_notice }}</div>
+</section>
+
+<section id="modulos">
+  <h2>Módulos ejecutados</h2>
+  <div class="table-wrap"><table>
+    <tr><th>Módulo</th><th>Estado</th><th class="num">Hallazgos</th><th class="num">Duración</th></tr>
+    {% for m in result.modules %}
+    <tr><td><code>{{ m.name }}</code></td><td>{{ labels.module_status[m.status] }}</td>
+        <td class="num">{{ m.findings_count }}</td><td class="num">{{ m.duration_ms }} ms</td></tr>
+    {% endfor %}
+  </table></div>
+</section>
+
+<section id="hallazgos">
+  <h2>Hallazgos</h2>
+  {% for group in groups %}
+  <h3>{{ group.label }} ({{ group.entries|length }})</h3>
+  {% for f in group.entries %}
+  <article class="finding f-{{ group.key|lower }}" id="{{ f.id }}">
+    <h4><span class="fid">{{ f.id }}</span>{{ f.title }}</h4>
+    <div class="chips" style="margin:0 0 6px">
+      <span class="chip sev-{{ group.key|lower }}">Severidad: {{ group.label }}</span>
+      <span class="chip tag">{{ labels.category[f.category.value] }}</span>
+      <span class="chip tag">Confianza: {{ labels.confidence[f.confidence.value] }}</span>
+    </div>
+    <div class="label">Descripción</div><p>{{ f.description }}</p>
+    {% if f.evidence %}<div class="label">Evidencia técnica</div><pre>{{ f.evidence | join("\n") }}</pre>{% endif %}
+    <div class="label">Explicación técnica</div><p>{{ f.technical_explanation }}</p>
+    <div class="label">Impacto en el negocio</div><p>{{ f.business_impact }}</p>
+    <div class="label">Remediación recomendada</div><p>{{ f.remediation }}</p>
+    <div class="label">Limitaciones de validación</div><p class="limits">{{ f.validation_limitations }}</p>
+  </article>
+  {% endfor %}
+  {% else %}
+  <div class="card muted">No se registraron hallazgos.</div>
+  {% endfor %}
+</section>
+
+<section id="puntuacion">
+  <h2>Cómo se calculó la puntuación</h2>
+  <div class="card">
+    <ul class="plain">{% for line in risk.method %}<li>{{ line }}</li>{% endfor %}</ul>
+  </div>
+  <h3>Desglose de descuentos</h3>
+  {% if deductions %}
+  <div class="table-wrap"><table>
+    <tr><th>Hallazgo</th><th>Severidad</th><th>Categoría</th><th>Confianza</th><th class="num">Descuento</th></tr>
+    {% for line in deductions %}
+    <tr><td><span class="fid">{{ line.finding_id }}</span>{{ line.title }}</td>
+        <td>{{ labels.severity[line.severity.value] }}</td>
+        <td>{{ labels.category[line.category.value] }}</td>
+        <td>{{ labels.confidence[line.confidence.value] }}</td>
+        <td class="num">−{{ "%.2f"|format(line.applied_deduction) }}</td></tr>
+    {% endfor %}
+    <tr><td colspan="4"><b>Descuento total</b></td><td class="num"><b>−{{ "%.2f"|format(risk.total_deduction) }}</b></td></tr>
+  </table></div>
+  {% else %}
+  <div class="card muted">Ningún hallazgo restó puntos.</div>
+  {% endif %}
+  {% if risk.notes %}
+  <h3>Notas de este escaneo</h3>
+  <div class="card"><ul class="plain">{% for note in risk.notes %}<li>{{ note }}</li>{% endfor %}</ul></div>
+  {% endif %}
+</section>
+
+<section id="dns">
+  <h2>Registros DNS observados</h2>
+  {% if result.dns_records %}
+  <div class="table-wrap"><table>
+    <tr><th>Tipo</th><th>Valores</th></tr>
+    {% for rdtype, values in result.dns_records.items() %}
+    <tr><td><code>{{ rdtype }}</code></td><td><pre>{{ values | join("\n") }}</pre></td></tr>
+    {% endfor %}
+  </table></div>
+  {% else %}
+  <div class="card muted">No se obtuvieron registros del dominio.</div>
+  {% endif %}
+</section>
+
+<section id="limitaciones">
+  <h2>Limitaciones de la evaluación</h2>
+  <div class="card"><ul class="plain">{% for text in result.limitations %}<li>{{ text }}</li>{% endfor %}</ul></div>
+</section>
+
+</div></main>
+<footer><div class="wrap">
+  <p>Generado por DomainGuard v{{ result.tool_version }} el {{ finished_text }}.</p>
+  <p>{{ result.authorization_notice }}</p>
+</div></footer>
+</body>
+</html>
